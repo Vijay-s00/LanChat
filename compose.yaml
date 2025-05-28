@@ -4,3 +4,31 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+  db:
+    image: postgres
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "15432:5432"
+    networks:
+      - lanchat-net
+    volumes:
+      - ${PWD}/db-data/:/var/lib/postgresql/data/
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - 15433:80
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - lanchat-net
+    volumes:
+      - ${PWD}/pgadmin-data/:/var/lib/pgadmin/
+
+networks:
+  lanchat-net:
+    driver: bridge
