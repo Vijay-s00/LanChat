@@ -7,7 +7,8 @@ package database
 
 import (
 	"context"
-	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getMessages = `-- name: GetMessages :many
@@ -15,7 +16,7 @@ SELECT id, name_from, name_to, message, created_at FROM Messages
 `
 
 func (q *Queries) GetMessages(ctx context.Context) ([]Message, error) {
-	rows, err := q.db.QueryContext(ctx, getMessages)
+	rows, err := q.db.Query(ctx, getMessages)
 	if err != nil {
 		return nil, err
 	}
@@ -34,13 +35,17 @@ func (q *Queries) GetMessages(ctx context.Context) ([]Message, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return items, nil
+}
+
+type InsertBulkMessagesParams struct {
+	NameFrom  string
+	NameTo    string
+	Message   string
+	CreatedAt pgtype.Timestamp
 }
 
 const insertMessage = `-- name: InsertMessage :one
@@ -52,11 +57,11 @@ type InsertMessageParams struct {
 	NameFrom  string
 	NameTo    string
 	Message   string
-	CreatedAt time.Time
+	CreatedAt pgtype.Timestamp
 }
 
 func (q *Queries) InsertMessage(ctx context.Context, arg InsertMessageParams) (Message, error) {
-	row := q.db.QueryRowContext(ctx, insertMessage,
+	row := q.db.QueryRow(ctx, insertMessage,
 		arg.NameFrom,
 		arg.NameTo,
 		arg.Message,

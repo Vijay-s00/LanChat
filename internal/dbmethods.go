@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/JuanMartinCoder/LanChat/internal/database"
+	"github.com/jackc/pgx/v5/pgtype"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -35,6 +36,8 @@ func SaveToDBMessages(
 		return fmt.Errorf("could not consume messages: %v", err)
 	}
 
+	MessageBulk := make([]database.InsertBulkMessagesParams, 0)
+
 	go func() {
 		defer ch.Close()
 		for msg := range msgs {
@@ -43,19 +46,26 @@ func SaveToDBMessages(
 				log.Fatalf("Unable to parse message:%v", err)
 			}
 
-			msqToDB := database.InsertMessageParams{
-				NameFrom:  message.FROM,
-				NameTo:    message.TO,
-				Message:   message.MESSAGE,
-				CreatedAt: time.Now().UTC(),
+			msqToDB := database.InsertBulkMessagesParams{
+				NameFrom: message.FROM,
+				NameTo:   message.TO,
+				Message:  message.MESSAGE,
+				CreatedAt: pgtype.Timestamp{
+					Time:  time.Now().UTC(),
+					Valid: true,
+				},
 			}
 
-			msgRes, err := db.InsertMessage(context.Background(), msqToDB)
-			if err != nil {
-				log.Fatal(err)
-			}
+			MessageBulk = append(MessageBulk, msqToDB)
 
-			log.Printf("Message Received: %+v", msgRes)
+			if len(MessageBulk) > 50 {
+				msgRes, err := db.InsertBulkMessages(context.Background(), MessageBulk)
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Printf("Data inserted/Received: %d", msgRes)
+				MessageBulk = MessageBulk[:0]
+			}
 		}
 	}()
 	return nil

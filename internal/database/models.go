@@ -5,7 +5,7 @@
 package database
 
 import (
-	"time"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Message struct {
@@ -13,5 +13,5 @@ type Message struct {
 	NameFrom  string
 	NameTo    string
 	Message   string
-	CreatedAt time.Time
+	CreatedAt pgtype.Timestamp
 }
