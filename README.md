@@ -53,3 +53,9 @@ The requirements for running this application are *Go* and *Docker*
 5. Connect to the chat with the main app
 
    `go run ./cmd/main.go`
+
+6. To shutdown the services do
+
+   `./servicesUp stop`
+
+   
